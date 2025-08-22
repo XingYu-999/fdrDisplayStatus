@@ -1,9 +1,0 @@
-<RCC>
-    <qresource prefix="/icon">
-        <file>logo.ico</file>
-        <file>fdrPanel.bmp</file>
-    </qresource>
-    <qresource prefix="/image">
-        <file>SansoAiLogo.svg</file>
-    </qresource>
-</RCC>
