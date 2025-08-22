@@ -16,14 +16,31 @@ GetFdrInfoClient::~GetFdrInfoClient()
     delete reply;
 }
 
+
+//按定时时间处理的函数
 void GetFdrInfoClient::sloTimerTimeoutProcess()
 {
-    qDebug() << "time out, " << "Thread：" << QThread::currentThreadId();
+    //通讯参数被修改
+    if(HttpConnectStatus == -1) {
+        manager->disconnect();
+        delete manager;
+        HttpConnectStatus = 0;
+    }
+
+    if(HttpConnectStatus == 1) {
+        iHttpTimeoutCounter += 1;
+
+    }
+
+    qDebug() << "Thread ID：" << QThread::currentThreadId() << " timeOut to get HttpMessage. counter : " << iHttpTimeoutCounter;
+
     if(HttpConnectStatus == 0) {    //使用子线程创建类
+        iHttpTimeoutCounter = 0;
         //配置请求头
         manager = new QNetworkAccessManager;
+        manager->setTransferTimeout(iPostTimeoutTime);  //设置超时时间
         connect(manager, &QNetworkAccessManager::finished, this, &GetFdrInfoClient::sloRelpyFinished);
-        request.setUrl(QUrl("http://192.168.5.7:38900/jtsorterservice/getfeederstatus"));
+        request.setUrl(QUrl(qStrGetFdrStatusUrl));
         request.setRawHeader("Content-Type", "application/json");
         request.setRawHeader("cache-control", "no-cache");
 
@@ -40,11 +57,13 @@ void GetFdrInfoClient::sloTimerTimeoutProcess()
     if((HttpConnectStatus == 0) | (HttpConnectStatus == 2)) {
         reply = manager->post(request, dataArray);
         HttpConnectStatus = 1;
+        iHttpTimeoutCounter = 0;
     }
 }
 
 void GetFdrInfoClient::sloRelpyFinished()
 {
+    iHttpTimeoutCounter = 0;
     qDebug() << "post finished, " << "Thread：" << QThread::currentThreadId();
     HttpConnectStatus = 2;
     if(reply->error()!=QNetworkReply::NoError){
@@ -102,7 +121,7 @@ void GetFdrInfoClient::sloRelpyFinished()
             qDebug()<<"json error:"<<json_error.errorString();
         }
     }
-    reply->deleteLater();
+    // reply->deleteLater();
 }
 
 //检测本地是否有此Ip

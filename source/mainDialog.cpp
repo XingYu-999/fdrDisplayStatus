@@ -165,6 +165,8 @@ void MainDialog::sloTimerProcess()
             getFdrInfoHttpClient1->iLevelNo = mainWinPreference->iLevelNum;
             getFdrInfoHttpClient1->iFeederId = mainWinPreference->iFdrNum;
             getFdrInfoHttpClient1->qStrGetFdrStatusUrl = mainWinPreference->qstrUrl;
+            //配置接口超时重试时间
+            getFdrInfoHttpClient1->iPostTimeoutTime = mainWinPreference->iTimeOutMs;
 
             //托盘栏图标显示内容更新
             QString qstrLevelNum = "下";
@@ -253,12 +255,38 @@ void MainDialog::sloTimerProcess()
             usRecoverCounter = 0;
             this->ui->label->setText("网线断开");
         }
-    case 5:
+    case 5: //通讯参数修改
         if(usLastStep == 0) {
             usStep = 0;
         }
         else {
-            usStep = 1;
+            usStep = 3;
+            usLastStep = 1;
+
+            //配置和配置文件同步
+            getFdrInfoHttpClient1->iLevelNo = mainWinPreference->iLevelNum;
+            getFdrInfoHttpClient1->iFeederId = mainWinPreference->iFdrNum;
+            getFdrInfoHttpClient1->qStrGetFdrStatusUrl = mainWinPreference->qstrUrl;
+            //配置接口超时重试时间
+            getFdrInfoHttpClient1->iPostTimeoutTime = mainWinPreference->iTimeOutMs;
+
+            //关闭子线程定时器
+            getFdrInfoHttpClient1->timerPostHttp->stop();
+            //重新开启子线程定时器
+            getFdrInfoHttpClient1->timerPostHttp->start(mainWinPreference->iGetStatusIntervalMs);
+            //重置超时计数器
+            usReciveTimeOutCounter = 0;
+            bTimeOut = false;
+
+            //托盘栏图标显示内容更新
+            QString qstrLevelNum = "下";
+            if(mainWinPreference->iLevelNum == 1) {
+                qstrLevelNum = "上";
+            }
+            m_sysTrayIcon->setToolTip("供件台报警显示 " + qstrLevelNum + "层:" + QString::number(mainWinPreference->iFdrNum));
+
+            getFdrInfoHttpClient1->HttpConnectStatus = -1;
+
             this->ui->label->setStyleSheet("color:gray");                               //设置label字体颜色
             this->move(iDesktopWidth / 2 - 200, -10);                                   //显示置于中上
             ft.setPointSize(uiDisplayTopSize);                                          //字体大小修改
@@ -311,8 +339,7 @@ void MainDialog::initSysTrayIcon()
 //创建动作
 void MainDialog::createActions()
 {
-    if(mainWinPreference->bEnLoginSystem)
-        qActionLogin = new QAction("登录", this);
+    qActionLogin = new QAction("登录", this);
     connect(qActionLogin, &QAction::triggered ,this, &MainDialog::sloTryActLogin);
     qActionPerference = new QAction("首选项", this);
     connect(qActionPerference, &QAction::triggered ,this, &MainDialog::sloTryActPreference);
@@ -326,7 +353,9 @@ void MainDialog::createActions()
 void MainDialog::createMenu()
 {
     qmTryMenu = new QMenu(this);
-    qmTryMenu->addAction(qActionLogin);        //新增菜单项---登录
+    if(mainWinPreference->bEnLoginSystem) {
+        qmTryMenu->addAction(qActionLogin);        //新增菜单项---登录
+    }
     qmTryMenu->addAction(qActionPerference);    //新增菜单项---首选项
     qmTryMenu->addAction(qActionAboutSystem);  //新增菜单项---关于系统
     qmTryMenu->addSeparator();                 //增加分隔符
@@ -352,16 +381,21 @@ void MainDialog::sloTryActAboutSys()
     QString qstrBuildTime = buildDateTime();   //获取最后编译时间
     QApplication::setQuitOnLastWindowClosed(false);
     QMessageBox qMesgShowMassage(this);
-    qMesgShowMassage.setWindowTitle("关于 - sortersStatus");
+    qMesgShowMassage.setWindowTitle("关于 - 供件台状态显示");
     qMesgShowMassage.setText("嘉兴善索智能科技有限公司 copyright©2025"
                              "<br> version: " SOFTWARE_VERSION
-                             "<br> build: " + qstrBuildTime);
+                             "<br> build time: " + qstrBuildTime +
+                             "<br> BUG Reporting & Source Code: <a href='https://github.com/XingYu-999/fdrDisplayStatus.git'>Github</a>"
+                             "<br> E-mail: fubiju@gmail.com");
 //    qMesgShowMassage.setStandardButtons(QMessageBox::Yes);
     qMesgShowMassage.addButton("确定", QMessageBox::YesRole);                 //自定义按钮
 //    qMesgShowMassage.setButtonText(QMessageBox::Yes, QString("确 定"));
-    qMesgShowMassage.move(iDesktopWidth / 2 - 200, iDesktopHigh / 2 - 20);
-    qMesgShowMassage.setIconPixmap(QPixmap(":/image/SansoAiLogo.svg"));
 
+    //显示位置
+    qMesgShowMassage.move(iDesktopWidth / 2 - 200, iDesktopHigh / 2 - 20);
+    //添加LOGO
+    qMesgShowMassage.setIconPixmap(QPixmap(":/image/SansoAiLogo.svg"));
+    //显示
     qMesgShowMassage.exec();
 }
 

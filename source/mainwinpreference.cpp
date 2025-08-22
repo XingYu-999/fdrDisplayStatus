@@ -281,9 +281,9 @@ void MainWinPreference::configXmlCreat()
             //IP地址
             addElement(communication, doc, "address", "127.0.0.1");
             //端口
-            addElement(communication, doc, "port", "10020");
+            addElement(communication, doc, "port", "38900");
             //链接接口
-            addElement(communication, doc, "url", "http://192.168.5.7:38900/jtsorterservice/getfeederstatus");
+            addElement(communication, doc, "url", "http://127.0.0.1:38900/jtsorterservice/getfeederstatus");
             //超时时间
             addElement(communication, doc, "timeOutMs", "10000");
             //获取状态间隔

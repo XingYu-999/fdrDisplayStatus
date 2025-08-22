@@ -32,9 +32,9 @@ public:
     bool bEnLoginSystem = false;                //登录程序
 
     QString qstrAddress = "127.0.0.1";          //IP地址
-    int iPort = 10020;                          //端口号
-    QString qstrUrl = "http://127.0.0.1:10020/jtsorterservice/getfeederstatus";
-    int iTimeOutMs = 1000;                     //超时时间
+    int iPort = 38900;                          //端口号
+    QString qstrUrl = "http://127.0.0.1:38900/jtsorterservice/getfeederstatus";
+    int iTimeOutMs = 10000;                     //超时时间
     int iGetStatusIntervalMs = 5000;            //轮询间隔
 
     int iLevelNum = 100;                        //分拣机层号
